@@ -17,21 +17,31 @@
 
 /*
 ** ===================================================================
-**     Method      :  opModes_setActiveMode
+**     Method      :  opModes_setRunMode
 **
 **     Description :
-**         Device initialization code for setting active mode.
+**         Device initialization code for setting run mode.
 **         Maximum performance and power consumption
+**         3V , 3.7 mA
 ** ===================================================================
 */
-void opModes_setActiveMode(void)
+void opModes_setRunMode(void)
 {
-	
+
 	/*  System clock initialization */
 	/* SOPT1: COPE=0,COPT=0,STOPE=1,X,X,X,BKGDPE=1,RSTPE=0 */
 	SOPT1 = 0x32;                                      
 	/* SOPT2: COPCLKS=0,IICPS=0,ACIC=0 */
-	SOPT2 = 0x00;  //siempre cero                                    
+	SOPT2 = 0x00;     
+	
+	/*  Low voltage initialization */
+	/* SPMSC1: LVDF=0,LVDACK=0,LVDIE=0,LVDRE=0,LVDSE=0,LVDE=0,BGBE=0 */
+	SPMSC1 = 0x00;//0x18
+	/* SPMSC2: PDF=0,PPDF=0,PPDACK=0,PDC=0,PPDC=0 */
+	SPMSC2 = 0x00;        //-----------------------------------------stopMode3                                   
+	/* SPMSC3: LVDV=0,LVWV=0 */
+	SPMSC3 &= (unsigned char)~0x30;                              
+
 
 	
     /*	FLL Engaged Internal (FEI)
@@ -50,10 +60,8 @@ void opModes_setActiveMode(void)
 		ICSC1_RDIV = 0; //Divides reference clock by 1 (reset default)
 	    ICSC2_BDIV   = 0;//divide internal clock by 1 (8MHz bus)
 		//ICSC2_LP = 0;
-	
-	    //TODO:SMPC for get out from stop modes
 	    
-} /*opModes_setActiveMode*/
+} /*opModes_setRunMode*/
 
 
 /*
@@ -63,10 +71,18 @@ void opModes_setActiveMode(void)
 **     Description :
 **         Device initialization code for setting wait mode.
 **         Average performance and power consumption
-**         BKGD is disabled
+**         WARNING: BKGD is disabled!
+**         3V , 0.2 mA
 ** ===================================================================
 */
 void opModes_setWaitMode(){
+
+	/*  System clock initialization */
+	/* SOPT1: COPE=0,COPT=0,STOPE=1,X,X,X,BKGDPE=1,RSTPE=0 */
+	SOPT1 = 0x32;                                      
+	/* SOPT2: COPCLKS=0,IICPS=0,ACIC=0 */
+	SOPT2 = 0x00;     
+
 	/*	FLL Bypassed Internal Low Power (FBILP)
 	  	The FLL bypassed internal low power (FBILP) mode is entered when all the following conditions occur:
 		• CLKS bits are written to 01
@@ -83,133 +99,101 @@ void opModes_setWaitMode(){
 		//ICSTRM = 0x00; //modificar los TRM no funcionó para ajustar frec reloj al maximo
 		//ICSSC_FTRIM = 0; // The FTRIM bit controls the smallest adjustment of the internal reference clock frequency.
 		
-		//lowPowerEnabled = 1;
 } /*opModes_setWaitMode*/
 
 /*
 ** ===================================================================
-**     Method      :  opModes_setStopMode
+**     Method      :  opModes_setStop3Mode
 **
 **     Description :
-**         Device initialization code for setting stop mode.
+**         Device initialization code for setting stopMode3.
 **         Low power consumption
+**         WARNING: MCU is wake up just by interrupts
+**         3V , 0.05 mA
 ** ===================================================================
 */
-void opModes_setStopMode(){//TODO: unsigned char mode
+void opModes_setStop3Mode(){
+	
 	
 	/*  System clock initialization */
 	/* SOPT1: COPE=0,COPT=0,STOPE=1,X,X,X,BKGDPE=1,RSTPE=0 */
-	SOPT1 = 0x32;//0x30                                      
-	/* SPMSC1: LVDF=0,LVDACK=0,LVDIE=0,LVDRE=1,LVDSE=1,LVDE=0,BGBE=0 */
-	SPMSC1 = 0x18;                                      
+	SOPT1 = 0x32;                                      
+	/* SOPT2: COPCLKS=0,IICPS=0,ACIC=0 */
+	SOPT2 = 0x00;     
+	
+	/*  Low voltage initialization */
+	/* SPMSC1: LVDF=0,LVDACK=0,LVDIE=0,LVDRE=0,LVDSE=0,LVDE=0,BGBE=0 */
+	SPMSC1 = 0x00;//0x18
 	/* SPMSC2: PDF=0,PPDF=0,PPDACK=0,PDC=0,PPDC=0 */
-	SPMSC2 = 0x00;    //-----------------------------------------stopMode3                                  
+	SPMSC2 = 0x00;        //-----------------------------------------stopMode3                                   
 	/* SPMSC3: LVDV=0,LVWV=0 */
 	SPMSC3 &= (unsigned char)~0x30;                              
-	/* ICSC1: CLKS=0,RDIV=0,IREFS=1,IRCLKEN=0,IREFSTEN=0 */
-	ICSC1 = 0x04;                        /* Initialization of the ICS control register 1 */
-	/* ICSC2: BDIV=1,RANGE=0,HGO=0,LP=0,EREFS=0,ERCLKEN=0,EREFSTEN=0 */
-	ICSC2 = 0x40;                        /* Initialization of the ICS control register 2 */
+	  
 	
-	/* Common initialization of the write once registers */
-	/* SOPT2: COPCLKS=0,IICPS=0,ACIC=0 */
-	SOPT2 = 0x00;  //siempre cero                                    
+	/* ICSC1: CLKS=0,RDIV=0,IREFS=1,IRCLKEN=0,IREFSTEN=0 */
+	ICSC1 = 0x04;                        /* Initialization of the ICS control register 1 */ //Divides clock by 1, Internal reference clock selected
+	/* ICSC2: BDIV=1,RANGE=0,HGO=0,LP=0,EREFS=0,ERCLKEN=0,EREFSTEN=0 */
+	ICSC2 = 0x40;                        /* Initialization of the ICS control register 2 */ //divides selected clock by 8
+	
 
 	asm stop;							 /*Stop instruction using Mode 3*/	
 
-} /*opModes_setStopMode*/
-
-//void activateStop3Mode(void){
-//	  SPMSC2 = 0x00;				 /*Stop mode 3 enabled*/
-//		LED0 = 0;							 /* Turns off led 0*/
-//		LED1 = 0;							 /* Turns off led 1*/
-//		Delay();
-//	  PTAD = 0x0E;
-//	  asm stop;							 /*Stop instruction using Mode 3*/	
-//}
-
-
-
-
-
-
-
+} /*opModes_setStop3Mode*/
 
 
 /*
 ** ===================================================================
-**     Method      :  MCU_init (bean MC9S08QG8_16)
+**     Method      :  opModes_enableRTI (bean MC9S08QG8_16)
 **
 **     Description :
-**         Device initialization code for selected peripherals.
+**         activates RTI every 1.024 seconds (internal oscillator selected, 
+*          with a prescaler value of 32768 (RTIS = 7) )
 ** ===================================================================
 */
-void opModes_activateRTI(){
-  /* ### MC9S08QG8_16 "Cpu" init code ... */
-  /*  PE initialization code after reset */
+void opModes_enableRTI(){
+  
   /*  System clock initialization */
   /* SOPT1: COPE=0,COPT=0,STOPE=1,X,X,X,BKGDPE=1,RSTPE=0 */
   SOPT1 = 0x32;                                      
-  /* SPMSC1: LVDF=0,LVDACK=0,LVDIE=0,LVDRE=1,LVDSE=1,LVDE=1,BGBE=0 */
-  SPMSC1 = 0x1C;                                      
+  /* SOPT2: COPCLKS=0,IICPS=0,ACIC=0 */
+  SOPT2 = 0x00;     
+  
+  /*  Low voltage initialization */
+  /* SPMSC1: LVDF=0,LVDACK=0,LVDIE=0,LVDRE=0,LVDSE=0,LVDE=0,BGBE=0 */
+  SPMSC1 = 0x00;//0x1C
   /* SPMSC2: PDF=0,PPDF=0,PPDACK=0,PDC=0,PPDC=0 */
   SPMSC2 = 0x00;        //-----------------------------------------stopMode3                                   
   /* SPMSC3: LVDV=0,LVWV=0 */
   SPMSC3 &= (unsigned char)~0x30;                              
-  /* ICSC1: CLKS=0,RDIV=2,IREFS=1,IRCLKEN=0,IREFSTEN=0 */
-  ICSC1 = 0x14;                        /* Initialization of the ICS control register 1 */
-  /* ICSC2: BDIV=0,RANGE=0,HGO=0,LP=0,EREFS=0,ERCLKEN=0,EREFSTEN=0 */
-  ICSC2 = 0x00;                        /* Initialization of the ICS control register 2 */
-  /* Common initialization of the write once registers */
-  /* SOPT2: COPCLKS=0,IICPS=0,ACIC=0 */
-  SOPT2 = 0x00;     
   
-  //TODO: clean other regs
-
-  /* Common initialization of the CPU registers */
-  /* PTASE: PTASE5=1,PTASE4=1,PTASE3=1,PTASE2=1,PTASE1=1,PTASE0=1 */
-  //PTASE |= (unsigned char)0x3F;                               
-  /* PTBSE: PTBSE7=1,PTBSE6=1,PTBSE5=1,PTBSE4=1,PTBSE3=1,PTBSE2=1,PTBSE1=1,PTBSE0=1 */
-  //PTBSE = 0xFF;                                      
-  /* PTADS: PTADS5=0,PTADS4=0,PTADS3=0,PTADS2=0,PTADS1=0,PTADS0=0 */
-  //PTADS = 0x00;                                      
-  /* PTBDS: PTBDS7=0,PTBDS6=0,PTBDS5=0,PTBDS4=0,PTBDS3=0,PTBDS2=0,PTBDS1=0,PTBDS0=0 */
-  //PTBDS = 0x00;
+  /* ICSC1: CLKS=0,RDIV=2,IREFS=1,IRCLKEN=0,IREFSTEN=0 */
+  ICSC1 = 0x14;                        /* Initialization of the ICS control register 1 */ //Divides clock by 4, Internal reference clock selected
+  /* ICSC2: BDIV=0,RANGE=0,HGO=0,LP=0,EREFS=0,ERCLKEN=0,EREFSTEN=0 */
+  ICSC2 = 0x00;                        /* Initialization of the ICS control register 2 */ //divides selected clock by 1
   
   /* ### Init_RTI init code */
   /* SRTISC: RTIF=0,RTIACK=0,RTICLKS=0,RTIE=1,RTIS2=1,RTIS1=1,RTIS0=1 */
   SRTISC = 0x17;                                      
   
-  /* ### Init_COP init code */
-  //SRS = 0xFF;                          /* Clear WatchDog counter */
-
-  /* ### Init_GPIO init code */
-//  /* PTBD: PTBD7=1,PTBD6=1,PTBD5=1 */
-//  PTBD |= (unsigned char)0xF0;                               
-//  /* PTBPE: PTBPE7=0,PTBPE6=0,PTBPE5=0 */
-//  PTBPE &= (unsigned char)~0xE0;                              
-//  /* PTBDD: PTBDD7=1,PTBDD6=1,PTBDD5=1 */
-//  PTBDD |= (unsigned char)0xF0;                               
-  /* ### */
   asm CLI;                             /* Enable interrupts */
-} /*MCU_init*/
+} /*opModes_enableRTI*/
 
 /*
 ** ===================================================================
-**     Interrupt handler : Virq_isr
+**     Method      :  opModes_disableRTI (bean MC9S08QG8_16)
 **
 **     Description :
-**         User interrupt service routine. 
-**     Parameters  : None
-**     Returns     : Nothing
+**         disable the RTI interruption
 ** ===================================================================
 */
-__interrupt void Virq_isr(void)
-{
-    IRQSC_IRQACK=1;				/*Clears IRQ flag*/
-
-}
-/* end of Virq_isr */
+void opModes_disableRTI(){
+  
+  /* ### Init_RTI init code */
+  /* SRTISC: RTIF=0,RTIACK=0,RTICLKS=0,RTIE=0,RTIS2=0,RTIS1=0,RTIS0=0 */
+  SRTISC = 0x00;                                      
+  
+  asm CLI;                             /* Enable interrupts */
+} /*opModes_disableRTI*/
 
 /*
 ** ===================================================================
@@ -224,43 +208,7 @@ __interrupt void Virq_isr(void)
 __interrupt void Vrti_isr(void)
 {
      SRTISC_RTIACK = 1;  /* Acknowledges RTI flag*/
-
-//    if(hour == 24){
-//    
-//        hour = 0;                    /* Resets hour counter*/
-//    
-//    }if (min == 60){
-//    
-//        hour++;                      /* Increases hour counter*/
-//        min = 0;                     /* Resets minute counter*/
-//        //PTBD_PTBD6 = ~PTBD_PTBD6;    /* toggle hour LED */
-//    
-//    }if(sec == 60){
-//    
-//        min++;                       /* Increases minutes counter*/
-//        sec = 0;                     /* Resets seconds counter*/
-//        //PTBD_PTBD5 = ~PTBD_PTBD5;    /* toggle minute LED */
-//                                     
-//    }else{                           
-//        
-//        sec++;                       /* Increases seconds counter*/
-//        //PTBD_PTBD4 = ~PTBD_PTBD4;    /* toggle seconds LED */ 
-//                                      
-//    }                                
-
-
-
-}
-/* end of Vrti_isr */
-
-/* Initialization of the CPU registers in FLASH */
-
-/* NVPROT: FPS=0x7F,FPDIS=1 */
-//const volatile NVPROTSTR _NVPROT @0x0000FFBD = { 0xFF };
-
-/* NVOPT: KEYEN=0,FNORED=1,SEC01=1,SEC00=0 */
-//const volatile NVOPTSTR _NVOPT @0x0000FFBF = { 0x7E };
-
+}/* end of Vrti_isr */
 
 
 extern void _Startup(void);
@@ -290,82 +238,65 @@ void (* const _vect[])() @0xFFD0 = {   /* Interrupt vector table */
          UNASSIGNED_ISR,               /* Int.no. 18 Vtpmch0 (at FFF4)               Unassigned */
          UNASSIGNED_ISR,               /* Int.no. 19 Reserved20 (at FFF6)            Unassigned */
          UNASSIGNED_ISR,               /* Int.no. 20 Vlvd (at FFF8)                  Unassigned */
-         Virq_isr,                     /* Int.no. 21 Virq (at FFFA)                  Used */
+         UNASSIGNED_ISR,                     /* Int.no. 21 Virq (at FFFA)                  Used */
          UNASSIGNED_ISR,               /* Int.no. 22 Vswi (at FFFC)                  Unassigned */
          //_Startup                      /* Int.no. 23 Vreset (at FFFE)                Reset vector */
  };
 
 
 
+/********************************************************************************************************/
+/******************************** High Level Implementation functions ***********************************/
+/********************************************************************************************************/
 
+/*
+** ===================================================================
+**     Method      :  runMode_mSleep
+**
+**     Description :
+**         miliSeconds sleep function for runMode.
+**         WARNING: runMode must be set before!
+** ===================================================================
+*/
+void runMode_mSleep(unsigned int msecs){
+	unsigned int i, j;
+	for (i=0;i<msecs;i++){
+		for(j=0;j<412;j++);// manually trimmed
+	}
+} /*runMode_mSleep*/
 
+/*
+** ===================================================================
+**     Method      :  waitMode_sSleep
+**
+**     Description :
+**         Seconds sleep function for waitMode.
+**         WARNING: waitMode must be set before!
+** ===================================================================
+*/
+void waitMode_sSleep(unsigned int secs){
+	unsigned int i, j;
+	for (i=0; i<secs; i++){
+		for (j=0;j<750;j++);// manually trimmed
+	}
+} /*waitMode_sSleep*/
 
-
-
-
-
-
-
-///*
-// * Delay:      This function is for delay purposes only
-// *
-// * Parameters: None
-// *
-// * Return : None
-// */
-//void Delay(void){
-//  unsigned int b;
-//  unsigned char a;
-//  for(a=0;a<0x01;a++)
-//  {
-//      for(b=0;b<0xFFFF;b++)
-//      {
-//        ;
-//      }
-//  }
-//}
-//
-//void activateStop3Mode(void){
-//	  SPMSC2 = 0x00;				 /*Stop mode 3 enabled*/
-//		LED0 = 0;							 /* Turns off led 0*/
-//		LED1 = 0;							 /* Turns off led 1*/
-//		Delay();
-//	  PTAD = 0x0E;
-//	  asm stop;							 /*Stop instruction using Mode 3*/	
-//}
-//
-//void activateRTI(void){
-//	MCU_init_RTI();
-//	
-//}
-//
-//void stopForSecs(unsigned int secs){
-//	unsigned int i;
-//	//Delay();Delay();Delay();Delay();Delay();Delay();
-//	//Delay();Delay();Delay();Delay();Delay();Delay();
-//	activateRTI();
-//	for(i=0; i<secs ; i++){
-//		activateStop3Mode();
-//	}
-//	MCU_init();	
-//}
-//
-//void runForSecs(unsigned int secs){
-//	unsigned int i;
-//	//activateRunMode();//inialize clock regs for max freq
-//	for(i=0; i<secs; i++){
-//		//ssleep();//ssleep has to run on max freq
-//	}
-//	
-//}
-
-
-//void blinkingLeds(unsigned int count){
-//	unsigned char a;
-//	LED0 = 0;
-//	LED1 = 0;
-//	for(a=0; a<(count<<1); a++){
-//	    LED0 = ~LED0;			 /*Blink leds*/
-//	    LED1 = ~LED1;
-//	    Delay();
-//	}
+/*
+** ===================================================================
+**     Method      :  stopMode_sSleep
+**
+**     Description :
+**     Description :
+**         Seconds sleep function for stopMode.
+**         WARNING: stopMode is set inside (Do NOT do it before). 
+** ===================================================================
+*/
+void stopMode_sSleep(unsigned int secs){
+	unsigned int i;
+	opModes_enableRTI();
+	for(i=0;i<secs;i++){ // the RTI interrupts every 1 second
+		opModes_setStop3Mode();		
+	}
+	opModes_disableRTI();
+	opModes_setRunMode();		
+} /*stopMode_sSleep*/

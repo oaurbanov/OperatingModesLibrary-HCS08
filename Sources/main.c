@@ -31,80 +31,43 @@
 */
 #include <hidef.h> /* for EnableInterrupts macro */
 #include "derivative.h" /* include peripheral declarations */
-//#include "MCUinit.h"
 #include "operating_modes.h"
 
 #define LED2    PTBD_PTBD4		 /*Define LED 0 position in port B*/
 #define LED1    PTBD_PTBD5		 /*Define LED 1 position in port B*/
 
-//extern unsigned char hour;
-//extern unsigned char min;
-//extern unsigned char sec;
-
-
-void activeMode_mSleep(unsigned int secs){
-	unsigned int i, j;
-	for (i=0;i<secs;i++){
-		for(j=0;j<412;j++);
-	}
-}
-
-void waitMode_sSleep(unsigned int secs){//TODO: fix it, it's not working
-	unsigned int i, j;
-	for (i=0; i<secs; i++){
-		for (j=0;j<20;j++){}//720 //1430 valor en waitMode // 1 sec //debería ser 32000 porque el reloj interno corre a 32k, pero lo ajuste manualmente así
-	}
-}
-
-void stopMode_4secs(unsigned int secs){
-	unsigned int i;
-	
-	//opModes_setActiveMode();
-	//activeMode_mSleep(1000);
-	
-	opModes_activateRTI();
-	opModes_setStopMode();
-	for(i=0;i<secs;i++){ // the RTI interrupts every 1 second
-		//opModes_setStopMode();		
-		SPMSC2 = 0x00;				 /*Stop mode 3 enabled*/
-		asm stop;							 /*Stop instruction using Mode 3*/	
-	}
-	opModes_setActiveMode();		
-
-}
-
-void blinkingLeds(unsigned int count){
+void blinkLeds(unsigned int count){
 	unsigned char a;
-	opModes_setActiveMode();
+	opModes_setRunMode();
+
 	LED1 = 0;  PTBDD_PTBDD5 = 1; //1==out,0==in
 	LED2 = 0;  PTBDD_PTBDD4 = 1; //1==out,0==in
 	
 	for(a=0; a<(count<<1); a++){
 	    LED1 = ~LED1;			 /*Blink leds*/
 	    LED2 = ~LED2;
-	    activeMode_mSleep(400);
+	    runMode_mSleep(400);
 	}
 }
 
 void main(void) {
-	LED1 = 0;  PTBDD_PTBDD5 = 1; //1==out,0==in
 
 	for(;;){	
 
-		//activeMode:
-		blinkingLeds(3);
-		opModes_setActiveMode();
-		activeMode_mSleep(10000);// running 10 secs in activeMode.  I = x mA
-		
-		//stopMode:
-		blinkingLeds(2);
-		stopMode_4secs(10);// running 10 secs in activeMode.  I = x uA
+		//runMode:
+		blinkLeds(3);
+		opModes_setRunMode();
+		runMode_mSleep(10000);// running 10 secs in runMode.  I = 3.7 mA
 		
 		//waitMode:
-		//blinkingLeds(1);
-		//opModes_setWaitMode();
-		//waitMode_sSleep(10);// running 10 secs in waitMode.  I = x mA
-		
+		blinkLeds(2);
+		opModes_setWaitMode();
+		waitMode_sSleep(10);// running 10 secs in waitMode.  I = 0.2 mA
+
+		//stopMode:
+		blinkLeds(1);
+		stopMode_sSleep(10);// running 10 secs in stopMode.  I = 0.05 mA
+
 	}
 
 

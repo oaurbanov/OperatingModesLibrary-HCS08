@@ -10,14 +10,15 @@
 
 /* Include shared modules, which are used for whole project */
 
-void opModes_setActiveMode(void);
+void opModes_setRunMode(void);
 /*
 ** ===================================================================
-**     Method      :  opModes_setActiveMode
+**     Method      :  opModes_setRunMode
 **
 **     Description :
-**         Device initialization code for setting active mode.
+**         Device initialization code for setting run mode.
 **         Maximum performance and power consumption
+**         3V , 3.7 mA
 ** ===================================================================
 */
 
@@ -30,43 +31,41 @@ void opModes_setWaitMode(void);
 **         Device initialization code for setting wait mode.
 **         Average performance and power consumption
 **         BKGD is disabled
+**         3V , 0.2 mA
 ** ===================================================================
 */
 
-void opModes_setStopMode(void);
+void opModes_setStop3Mode(void);
 /*
 ** ===================================================================
-**     Method      :  opModes_setStopMode
+**     Method      :  opModes_setStop3Mode
 **
 **     Description :
-**         Device initialization code for setting stop mode.
+**         Device initialization code for setting stop3mode.
 **         Low power consumption
+**         3V , 0.05 mA
 ** ===================================================================
 */
 
-void opModes_activateRTI(void);
+void opModes_enableRTI(void);
 /*
 ** ===================================================================
-**     Method      :  MCU_init (bean MC9S08QG8_16)
+**     Method      :  opModes_enableRTI (bean MC9S08QG8_16)
 **
 **     Description :
 **         Device initialization code for selected peripherals.
 ** ===================================================================
 */
 
-
-__interrupt void Virq_isr(void);
+void opModes_disableRTI(void);
 /*
 ** ===================================================================
-**     Interrupt handler : Virq_isr
+**     Method      :  opModes_disableRTI (bean MC9S08QG8_16)
 **
 **     Description :
-**         User interrupt service routine. 
-**     Parameters  : None
-**     Returns     : Nothing
+**         Disables the RTI interruption
 ** ===================================================================
 */
-
 
 __interrupt void Vrti_isr(void);
 /*
@@ -79,5 +78,46 @@ __interrupt void Vrti_isr(void);
 **     Returns     : Nothing
 ** ===================================================================
 */
+
+
+/********************************************************************************************************/
+/******************************** High Level Implementation functions ***********************************/
+/********************************************************************************************************/
+
+
+void runMode_mSleep(unsigned int msecs);
+/*
+** ===================================================================
+**     Method      :  runMode_mSleep
+**
+**     Description :
+**         miliSeconds sleep function for runMode.
+**         WARNING: runMode must be set before!
+** ===================================================================
+*/
+
+void waitMode_sSleep(unsigned int secs);
+/*
+** ===================================================================
+**     Method      :  waitMode_sSleep
+**
+**     Description :
+**         Seconds sleep function for waitMode.
+**         WARNING: waitMode must be set before!
+** ===================================================================
+*/
+
+void stopMode_sSleep(unsigned int secs);
+/*
+** ===================================================================
+**     Method      :  stopMode_sSleep
+**
+**     Description :
+**     Description :
+**         Seconds sleep function for stopMode.
+**         WARNING: stopMode is set inside (Do NOT do it before). 
+** ===================================================================
+*/
+
 
 #endif /* OPERATING_MODES_H_ */
